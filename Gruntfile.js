@@ -1,19 +1,14 @@
 (function () {
     "use strict";
 
-    var PROJECT_BASE_PATH = __dirname + '/../..',
-        DEFAULT_KARMA_CONFIG_FILE = PROJECT_BASE_PATH + '/test/rtd/karma.conf.js',
-        CUSTOM_KARMA_CONFIG_FILE = PROJECT_BASE_PATH + '/test/karma.conf.js',
-        DEFAULT_RTD_CONFIG_FILE = PROJECT_BASE_PATH + '/test/rtd/rtd.conf.js',
-        CUSTOM_RTD_CONFIG_FILE = PROJECT_BASE_PATH + '/test/rtd.conf.js',
-        http = require('http'),
+    var http = require('http'),
         fs = require('fs'),
+        projectBasePath = __dirname + '/../..',
         growl = require('growl'),
-        libnotify = require('libnotify'),
-        rtdConf = require(fs.existsSync(CUSTOM_RTD_CONFIG_FILE) ? CUSTOM_RTD_CONFIG_FILE : DEFAULT_RTD_CONFIG_FILE);
+        libnotify = require('libnotify');
 
     function getLatestCoverageObject() {
-        var coverageDir = PROJECT_BASE_PATH + '/build/reports/coverage';
+        var coverageDir = projectBasePath + '/build/reports/coverage';
 
         if (!fs.existsSync(coverageDir)) {
             return null;
@@ -44,7 +39,7 @@
 
         var find = './app';
         var re = new RegExp(find, 'g');
-        data = data.replace(re, PROJECT_BASE_PATH.substring(0, PROJECT_BASE_PATH.indexOf('/test/rtd')) + '/app');
+        data = data.replace(re, projectBasePath.substring(0, projectBasePath.indexOf('/test/rtd')) + '/app');
 
         var options = {
             hostname: host,
@@ -74,12 +69,13 @@
     }
 
     function getRunCmd(grunt) {
-        var runCmd = fs.existsSync(PROJECT_BASE_PATH + '/app/smart.json') ? 'mrt' : 'meteor run',
+        var runCmd = fs.existsSync(projectBasePath + '/app/smart.json') ? 'mrt' : 'meteor run',
             settingsPath = getSettingsPath(grunt);
 
         if (settingsPath) {
             runCmd += ' --settings ' + settingsPath;
         }
+        //console.log('resolved meteor run command to [' + runCmd + ']');
         return runCmd;
     }
 
@@ -106,7 +102,7 @@
             relativeToProjectBase;
 
         viaOption = grunt.option('settingsPath');
-        settingsPath = viaOption || (PROJECT_BASE_PATH + '/app/settings.json');
+        settingsPath = viaOption || (projectBasePath + '/app/settings.json');
         fileExists = fs.existsSync(settingsPath);
 
         if (viaOption && !fileExists) {
@@ -117,11 +113,11 @@
             return null;
         }
 
-        relativeToProjectBase = (0 === settingsPath.indexOf(PROJECT_BASE_PATH));
+        relativeToProjectBase = (0 === settingsPath.indexOf(projectBasePath));
         if (relativeToProjectBase) {
 
             // ex. ../../app/settings.json
-            settingsPath = settingsPath.substring(PROJECT_BASE_PATH.length);
+            settingsPath = settingsPath.substring(projectBasePath.length);
 
             if (0 === settingsPath.indexOf('/app/')) {
                 // strip left-over relative part
@@ -145,23 +141,20 @@
 
         var runCmd = getRunCmd(grunt);
 
+        // TODO make this only happen if in verbose/debug mode
         grunt.log.header = function () {
-            if (rtdConf.DEBUG) {
-                console.log('*** HEADER ***', arguments);
-            }
+            //console.log('**** HEADER ****', arguments);
         };
         grunt.log.ok = function () {
         };
 
         grunt.initConfig({
-            basePath: PROJECT_BASE_PATH,
-            karmaConfigFile: fs.existsSync(CUSTOM_KARMA_CONFIG_FILE) ? CUSTOM_KARMA_CONFIG_FILE : DEFAULT_KARMA_CONFIG_FILE,
+            basePath: projectBasePath,
             chromeDriverOs: 'mac32', // You can also do linux_64
             chromeDriverVersion: '0.8',
             chromeDriverSha: '5a485bb73a7e85a063cffaab9314837a00b98673',
             seleniumServeVersion: '2.32.0',
             seleniumServeSha: 'c94e6d5392b687d3a141a35f5a489f50f01bef6a',
-            coverageThresholds: JSON.stringify(rtdConf.coverageThresholds),
             watch: {
                 files: [
                     '<%= basePath %>/test/unit/**/*.js',
@@ -170,7 +163,15 @@
                     '<%= basePath %>/app/**/*',
                     '!<%= basePath %>/app/.meteor/local/**/*'
                 ],
-                tasks: rtdConf.watchTasks
+                tasks: [
+                    'bgShell:karmaRun',
+                    'bgShell:synchronizeMirrorApp',
+                    'bgShell:instrumentCode',
+                    'bgShell:runTests',
+                    'postLatestUnitCoverage',
+                    'bgShell:killReports',
+                    'bgShell:runCoverageCheck'
+                ]
             },
             bgShell: {
                 _defaults: {
@@ -196,14 +197,14 @@
                     }
                 },
                 startGhostDriver: {
-                    cmd: 'phantomjs --webdriver=4444' + (rtdConf.DEBUG ? ';' : ' > /dev/null 2>&1;')
+                    cmd: 'phantomjs --webdriver=4444 > /dev/null 2>&1;'
                 },
                 startKarma: {
                     cmd: 'cd <%= basePath %>/test/rtd;' +
-                        'karma start <%= karmaConfigFile %>;'
+                        'karma start;'
                 },
                 instrumentCode: {
-                    cmd: 'istanbul instrument <%= basePath %>/app -o <%= basePath %>/test/rtd/mirror_app -x "**/packages/**" -x "**/3rd/**"' + (rtdConf.DEBUG ? ';' : ' > /dev/null 2>&1;'),
+                    cmd: 'istanbul instrument <%= basePath %>/app -o <%= basePath %>/test/rtd/mirror_app -x "**/packages/**" -x "**/3rd/**" > /dev/null 2>&1;',
                     bg: false
                 },
                 killAll: {
@@ -229,11 +230,11 @@
                 },
                 startApp: {
                     cmd: 'cd <%= basePath %>/app;' +
-                        runCmd + ' --port 3000' + (rtdConf.DEBUG ? ';' : ' > /dev/null 2>&1;')
+                        runCmd + ' --port 3000 > /dev/null;'
                 },
                 startMirrorApp: {
                     cmd: 'cd <%= basePath %>/test/rtd/mirror_app;' +
-                        runCmd + ' --port 8000' + (rtdConf.DEBUG ? ';' : ' > /dev/null 2>&1;')
+                        runCmd + ' --port 8000  > /dev/null;'
                 },
                 synchronizeMirrorApp: {
                     cmd: 'rsync -av --delete -q --delay-updates --force --exclude=".meteor/local" <%= basePath %>/app/ mirror_app;' +
@@ -246,8 +247,9 @@
                     bg: false
                 },
                 karmaRun: {
-                    cmd: 'echo ; echo - - - Running unit tests - - -;' +
-                        'karma run' + (rtdConf.DEBUG ? ';' : ' > /dev/null 2>&1;'),
+                    //lavaina changes: Calls CoffeeScript compilation before tests
+                    cmd: 'grunt coffee;echo ; echo - - - Running unit tests - - -;' +
+                        'karma run > /dev/null 2>&1;',
                     bg: false,
                     fail: true
                 },
@@ -261,7 +263,7 @@
                 runCoverageCheck: {
                     cmd: 'echo - - - Running coverage tests - - -;' +
                         'export NODE_PATH="$(pwd)/node_modules";' +
-                        'jasmine-node --noStack <%= basePath %>/test/rtd/lib --config THRESHOLDS "<%= coverageThresholds %>";',
+                        'jasmine-node --noStack <%= basePath %>/test/rtd/lib;',
                     bg: false,
                     fail: true
                 },
@@ -276,14 +278,23 @@
                     src: '<%= basePath %>/test/rtd/lib/bin/chromedriver2_<%= chromeDriverOs %>_<%= chromeDriverVersion %>.zip',
                     dest: '<%= basePath %>/test/rtd/lib/bin/'
                 }
+            },
+            //lavaina changes: Sets target files for CoffeeScript compilation
+            coffee: {
+              compile: {
+                files: {
+                  '<%= basePath %>/app/coffee-compiled/source.js': '<%= basePath %>/app/*.coffee' 
+                }
+              }
             }
+
         });
         grunt.loadNpmTasks('grunt-bg-shell');
         grunt.loadNpmTasks('grunt-contrib-watch');
         grunt.loadNpmTasks('grunt-zip');
 
         grunt.registerTask('chmod', 'chmod', function () {
-            fs.chmodSync(PROJECT_BASE_PATH + '/test/rtd/lib/bin/chromedriver', '755');
+            fs.chmodSync(projectBasePath + '/test/rtd/lib/bin/chromedriver', '755');
         });
 
         ['warn', 'fatal'].forEach(function (level) {
@@ -299,8 +310,8 @@
 
         grunt.registerTask('downloadAndOrStartSelenium', 'downloadAndOrStartSelenium', function () {
             var done = this.async();
-            require(PROJECT_BASE_PATH + '/test/rtd/lib/selenium-launcher.js')(function (/*er, selenium*/) {
-                if (!fs.existsSync(PROJECT_BASE_PATH + '/test/rtd/lib/bin/chromedriver')) {
+            require(projectBasePath + '/test/rtd/lib/selenium-launcher.js')(function (/*er, selenium*/) {
+                if (!fs.existsSync(projectBasePath + '/test/rtd/lib/bin/chromedriver')) {
                     grunt.task.run('unzip', 'chmod');
                 }
                 done();
@@ -321,8 +332,19 @@
             console.log('Launching Mirror on port 8000');
         });
 
-        grunt.registerTask('default', rtdConf.startupTasks);
-
+        grunt.registerTask('default', [
+            'bgShell:killAll',
+            'downloadAndOrStartSelenium',
+            'bgShell:synchronizeMirrorApp',
+            'bgShell:instrumentCode',
+            'bgShell:startMirrorApp',
+            'bgShell:startKarma',
+            'bgShell:startApp',
+            'outputPorts',
+            'watch'
+        ]);
+        //lavaina changes: Allows to compile CoffeeScript files
+        grunt.loadNpmTasks('grunt-contrib-coffee');
     };
 
 })();
