@@ -165,8 +165,10 @@
             watch: {
                 files: [
                     '<%= basePath %>/test/unit/**/*.js',
+                    '<%= basePath %>/test/unit/**/*.coffee', // LaVaina change to add CoffeeScript support
                     '<%= basePath %>/test/rtd/lib/**/*.js',
                     '<%= basePath %>/test/acceptance/**/*.js',
+                    '<%= basePath %>/test/acceptance/**/*.coffee', // LaVaina change to add CoffeeScript support
                     '<%= basePath %>/app/**/*',
                     '!<%= basePath %>/app/.meteor/local/**/*'
                 ],
@@ -281,7 +283,10 @@
         grunt.loadNpmTasks('grunt-bg-shell');
         grunt.loadNpmTasks('grunt-contrib-watch');
         grunt.loadNpmTasks('grunt-zip');
-
+        
+        // LaVaina changes: Add coffeescript compilation task
+        grunt.loadNpmTasks('grunt-contrib-coffee');
+       
         grunt.registerTask('chmod', 'chmod', function () {
             fs.chmodSync(PROJECT_BASE_PATH + '/test/rtd/lib/bin/chromedriver', '755');
         });
