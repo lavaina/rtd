@@ -219,8 +219,11 @@
             watch: {
                 files: [
                     '<%= basePath %>/test/unit/**/*.js',
+                    '<%= basePath %>/test/unit/**/*.coffee', //LaVaina 
                     '<%= basePath %>/test/rtd/lib/**/*.js',
+                    '<%= basePath %>/test/rtd/lib/**/*.coffee',//LaVaina
                     '<%= basePath %>/test/acceptance/**/*.js',
+                    '<%= basePath %>/test/acceptance/**/*.coffee',//LaVaina
                     '<%= basePath %>/app/**/*',
                     '!<%= basePath %>/app/.meteor/local/**/*'
                 ],
