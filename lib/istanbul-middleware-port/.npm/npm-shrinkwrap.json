@@ -1,7 +1,12 @@
 {
   "dependencies": {
-    "path": {
-      "version": "0.4.9"
+    "archiver": {
+      "version": "0.4.3",
+      "dependencies": {
+        "readable-stream": {
+          "version": "1.0.2"
+        }
+      }
     },
     "istanbul": {
       "version": "0.1.34",
@@ -86,13 +91,8 @@
         }
       }
     },
-    "archiver": {
-      "version": "0.4.3",
-      "dependencies": {
-        "readable-stream": {
-          "version": "1.0.2"
-        }
-      }
+    "path": {
+      "version": "0.4.9"
     },
     "url": {
       "version": "0.7.9",

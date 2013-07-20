@@ -1,19 +1,51 @@
 {
-  "name": "realtime-development",
-  "preferGlobal": true,
-  "version": "0.0.1",
-  "author": "Sam Hatoum <sam@xolvio.com>",
-  "description": "a unit and acceptance testing approach to Meteor apps",
-  "contributors": [
-    {
-      "name": "Paul Dunnavant",
-      "email": "paul@xolvio.com"
+    "name": "realtime-development",
+    "preferGlobal": true,
+    "analyze": false,
+    "version": "0.0.1",
+    "author": "Sam Hatoum <sam@xolvio.com>",
+    "description": "The Meteor test runner",
+    "contributors": [
+        {
+            "name": "Miguel Alvarado",
+            "email": "miguel@xolvio.com"
+        }
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git@github.com:xolvio/rtd.git"
     },
-    {
-      "name": "Miguel Alvarado",
-      "email": "miguel@xolvio.com"
-    }
-  ],
+    "keywords": [
+        "feedback",
+        "test",
+        "tdd",
+        "rtd",
+        "acceptance",
+        "testing",
+        "test runner"
+    ],
+    "dependencies": {
+        "selenium-webdriver": "2.33.0"
+    },
+    "devDependencies": {
+        "grunt": "~0.4.1",
+        "grunt-exec": "~0.4.0",
+        "grunt-bg-shell": "~2.0.1",
+        "grunt-contrib-watch": "~0.3.1",
+        "grunt-zip": "~0.9.0",
+        "freeport": "1.0.x",
+        "request": "2.21.x",
+        "hash_file": "0.0.x",
+        "growl": "~1.7.0",
+        "libnotify": "~1.0.4",
+        "grunt-contrib-coffee": "~0.7.0"
+    },
+    "bundledDependencies": [],
+    "license": "MIT",
+    "engines": {
+        "node": ">=0.10",
+        "npm": "1.1.32"
+    },
   "repository": {
     "type": "git",
     "url": "https://github.com/xolvio/acute-feedback-development-with-meteor.git"
